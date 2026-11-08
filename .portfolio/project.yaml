@@ -1,0 +1,75 @@
+# 证据化清单。代码来自上游 qaz741wsd856/warden-worker，这里只记录部署和源码学习。校验：profile-atlas check .
+schema: portfolio/project@1
+id: warden-worker
+title: Warden 密码库服务：部署与源码学习
+title_en: Deploying and studying a Bitwarden server on Cloudflare Workers
+kind: personal
+role: solo
+period: {start: "2025-12", end: "2025-12"}
+visibility: hidden
+status: done
+
+summary: 把开源 Bitwarden 兼容服务部署到自己的 Cloudflare Workers 与 D1，并研读其实现
+problem: >-
+  自托管密码管理通常要一台长期在线的服务器，需要维护和续费。这个开源项目用 Cloudflare Workers 加 D1
+  做免费、免运维的个人密码库；我想把它部署起来自用，并弄清楚它在无服务器环境里怎么实现 Bitwarden 协议和密码存储。
+
+techs:
+  - slug: cloudflare-workers
+    depth: used
+    proposed: {name: Cloudflare Workers, name_zh: Cloudflare Workers 无服务器平台, kind: system}
+  - slug: github-actions
+    depth: used
+    proposed: {name: GitHub Actions, name_zh: GitHub Actions 持续集成, kind: system}
+  - slug: webassembly
+    depth: touched
+    proposed: {name: WebAssembly, name_zh: WebAssembly, kind: concept}
+  - slug: pbkdf2
+    depth: touched
+    proposed: {name: PBKDF2, name_zh: PBKDF2 口令派生, kind: method}
+
+contributions:
+  - what: 配置 Cloudflare 令牌、账号和 D1 数据库 secret，用 GitHub Actions 把服务部署到自己的 Cloudflare 账号
+    techs: [cloudflare-workers, github-actions]
+    evidence: [deploy-workflow, run-build-ok, run-frontend-ok]
+  - what: 研读实现：Bitwarden API 子集路由、D1 三张表、服务端 PBKDF2 二次派生与恒定时间校验，整理成学习笔记
+    techs: [webassembly, pbkdf2]
+    evidence: [learning-notes, crypto-code, router-code]
+
+findings:
+  - claim: 推送到 main 会直接触发生产部署，只改文档的提交要用 [skip ci] 跳过
+    kind: pitfall
+    evidence: [deploy-workflow]
+
+evidence:
+  - id: deploy-workflow
+    type: file
+    path: .github/workflows/push-cloudflare.yaml
+    quote:
+      - "branches: [main, uat, release*]"
+      - "run: sed -i \"s/\\${D1_DATABASE_ID}/${{ secrets.D1_DATABASE_ID }}/g\" wrangler.toml"
+  - id: run-build-ok
+    type: url
+    url: https://github.com/cowdedroyal-lab/warden-worker/actions/runs/19848709388
+    note: 2025-12-02 Build 成功（同日 19848535603 首次构建失败）
+  - id: run-frontend-ok
+    type: url
+    url: https://github.com/cowdedroyal-lab/warden-worker/actions/runs/19850723452
+    note: 2025-12-02 Deploy Frontend 成功
+  - id: learning-notes
+    type: file
+    path: LEARNING.md
+    quote: ["服务端再用 WebCrypto 的 PBKDF2-SHA256 加盐派生一次再存"]
+  - id: crypto-code
+    type: file
+    path: src/crypto.rs
+    quote:
+      - "/// Hashes the client-provided master password hash with server-side PBKDF2."
+      - "Ok(constant_time_eq("
+  - id: router-code
+    type: file
+    path: src/router.rs
+    quote: ['.route("/api/sync", get(sync::get_sync_data))']
+
+links:
+  repo: https://github.com/cowdedroyal-lab/warden-worker

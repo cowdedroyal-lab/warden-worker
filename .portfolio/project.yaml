@@ -7,7 +7,7 @@ kind: personal
 role: solo
 period: {start: "2025-12", end: "2025-12"}
 visibility: hidden
-status: done
+status: archived
 
 summary: 把开源 Bitwarden 兼容服务部署到自己的 Cloudflare Workers 与 D1，并研读其实现
 problem: >-
